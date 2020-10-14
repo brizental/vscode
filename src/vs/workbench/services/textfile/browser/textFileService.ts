@@ -5,6 +5,8 @@
 
 import * as nls from 'vs/nls';
 import { URI } from 'vs/base/common/uri';
+// @ts-ignore
+import * as glean from 'vs/base/common/glean';
 import { ITextFileService, ITextFileStreamContent, ITextFileContent, IResourceEncodings, IReadTextFileOptions, IWriteTextFileOptions, toBufferOrReadable, TextFileOperationError, TextFileOperationResult, ITextFileSaveOptions, ITextFileEditorModelManager, IResourceEncoding, stringToSnapshot } from 'vs/workbench/services/textfile/common/textfiles';
 import { IRevertOptions, IEncodingSupport } from 'vs/workbench/common/editor';
 import { ILifecycleService } from 'vs/platform/lifecycle/common/lifecycle';
@@ -37,6 +39,12 @@ import { WORKSPACE_EXTENSION } from 'vs/platform/workspaces/common/workspaces';
 import { UTF8, UTF8_with_bom, UTF16be, UTF16le, encodingExists, UTF8_BOM, detectEncodingByBOMFromBuffer, toEncodeReadable, toDecodeStream, IDecodeStreamResult } from 'vs/workbench/services/textfile/common/encoding';
 import { consumeStream } from 'vs/base/common/stream';
 import { IModeService } from 'vs/editor/common/services/modeService';
+
+// @ts-ignore
+const Glean = new glean.Glean('brizental-vscode-gleanjs', 'electron');
+const gleanMetrics = {
+	save: new glean._MetricTypes.EventMetricType(Glean, 'document', 'save')
+};
 
 /**
  * The workbench file service implementation implements the raw file service spec and adds additional methods on top.
@@ -184,6 +192,7 @@ export abstract class AbstractTextFileService extends Disposable implements ITex
 	//#region save
 
 	async save(resource: URI, options?: ITextFileSaveOptions): Promise<URI | undefined> {
+		gleanMetrics.save.record();
 
 		// Untitled
 		if (resource.scheme === Schemas.untitled) {
